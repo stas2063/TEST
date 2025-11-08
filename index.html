@@ -42,21 +42,22 @@
     .clock-card::before {
       content: "";
       position: absolute;
-      inset: -14px;
-      border-radius: calc(18px + 14px);
+      inset: -18px;
+      border-radius: calc(18px + 18px);
       background: linear-gradient(
-        90deg,
-        rgba(101, 139, 255, 0.82),
-        rgba(171, 109, 255, 0.82),
-        rgba(255, 108, 190, 0.82),
-        rgba(255, 119, 119, 0.82),
-        rgba(255, 194, 102, 0.82),
-        rgba(150, 241, 135, 0.82)
+        120deg,
+        rgba(86, 124, 255, 0.95),
+        rgba(166, 107, 255, 0.95),
+        rgba(255, 122, 183, 0.95),
+        rgba(255, 138, 115, 0.95),
+        rgba(255, 207, 120, 0.95),
+        rgba(139, 236, 148, 0.95),
+        rgba(86, 124, 255, 0.95)
       );
-      filter: blur(22px);
+      background-size: 280% 280%;
+      filter: blur(28px);
       z-index: -2;
-      opacity: 1;
-      animation: glow-shift 12s ease-in-out infinite alternate;
+      animation: glow-flow 8s ease-in-out infinite;
     }
 
     .clock-card::after {
@@ -101,18 +102,18 @@
       text-shadow: 0 0 12px rgba(255, 203, 255, 0.42);
     }
 
-    @keyframes glow-shift {
+    @keyframes glow-flow {
       0% {
-        filter: blur(22px);
-        transform: translate3d(0, 0, 0);
+        background-position: 0% 50%;
+        transform: rotate(0deg);
       }
       50% {
-        filter: blur(24px);
-        transform: translate3d(2px, -3px, 0);
+        background-position: 100% 50%;
+        transform: rotate(180deg);
       }
       100% {
-        filter: blur(22px);
-        transform: translate3d(-2px, 3px, 0);
+        background-position: 0% 50%;
+        transform: rotate(360deg);
       }
     }
   </style>
