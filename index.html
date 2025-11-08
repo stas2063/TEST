@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Электронные часы</title>
+  <style>
+    *, *::before, *::after {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: radial-gradient(circle at top, #2d3d70 0%, #141628 60%, #090a12 100%);
+      color: #f5f7ff;
+    }
+
+    .clock-wrapper {
+      text-align: center;
+      padding: 2rem 3rem;
+      border-radius: 1.5rem;
+      background: rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(16px);
+      box-shadow: 0 20px 45px rgba(0, 0, 0, 0.45), inset 0 0 50px rgba(255, 255, 255, 0.08);
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      position: relative;
+    }
+
+    .clock-wrapper::before {
+      content: "";
+      position: absolute;
+      inset: -8px;
+      border-radius: 1.8rem;
+      background: linear-gradient(135deg, rgba(65, 165, 255, 0.4), rgba(205, 139, 255, 0.4));
+      z-index: -1;
+      opacity: 0.6;
+      filter: blur(12px);
+    }
+
+    .time {
+      font-size: clamp(3rem, 10vw, 5.5rem);
+      letter-spacing: 0.15em;
+      font-weight: 600;
+      margin: 0;
+      text-shadow: 0 0 15px rgba(79, 152, 255, 0.65), 0 0 40px rgba(79, 152, 255, 0.4);
+    }
+
+    .date {
+      margin-top: 1rem;
+      font-size: clamp(1.1rem, 3vw, 1.5rem);
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      font-weight: 300;
+      color: rgba(214, 220, 255, 0.85);
+      text-shadow: 0 0 12px rgba(205, 139, 255, 0.35);
+    }
+
+    .glow-ring {
+      position: absolute;
+      inset: -25%;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(86, 196, 255, 0.45), rgba(14, 17, 31, 0));
+      z-index: -2;
+      animation: pulse 6s infinite alternate ease-in-out;
+      pointer-events: none;
+    }
+
+    @keyframes pulse {
+      0% {
+        transform: scale(0.95);
+        opacity: 0.55;
+      }
+      100% {
+        transform: scale(1.05);
+        opacity: 0.75;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="clock-wrapper">
+    <div class="glow-ring"></div>
+    <p class="time" id="time">00:00:00</p>
+    <p class="date" id="date">01 января 1970</p>
+  </div>
+
+  <script>
+    const timeElement = document.getElementById('time');
+    const dateElement = document.getElementById('date');
+
+    const monthNames = [
+      'января', 'февраля', 'марта', 'апреля', 'мая', 'июня',
+      'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря'
+    ];
+
+    const weekdayNames = [
+      'воскресенье', 'понедельник', 'вторник', 'среда', 'четверг', 'пятница', 'суббота'
+    ];
+
+    function pad(value) {
+      return value.toString().padStart(2, '0');
+    }
+
+    function updateClock() {
+      const now = new Date();
+      const hours = pad(now.getHours());
+      const minutes = pad(now.getMinutes());
+      const seconds = pad(now.getSeconds());
+
+      timeElement.textContent = `${hours}:${minutes}:${seconds}`;
+
+      const day = now.getDate();
+      const month = monthNames[now.getMonth()];
+      const year = now.getFullYear();
+      const weekday = weekdayNames[now.getDay()];
+
+      dateElement.textContent = `${weekday}, ${pad(day)} ${month} ${year}`;
+    }
+
+    updateClock();
+    setInterval(updateClock, 1000);
+  </script>
+</body>
+</html>
