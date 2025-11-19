@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Кольцевые гонки 2D</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --track: #5f666f;
+      --track-inner: #444b55;
+      --grass: #1b6b34;
+      --accent: #fcd34d;
+      --text: #e2e8f0;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: "Inter", system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      background: radial-gradient(circle at 20% 20%, #111827, var(--bg));
+      color: var(--text);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 32px;
+    }
+
+    .shell {
+      width: min(1100px, 100%);
+      background: #0b1224;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      border-radius: 16px;
+      box-shadow: 0 20px 70px rgba(0, 0, 0, 0.45);
+      overflow: hidden;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 16px 18px;
+      background: linear-gradient(90deg, rgba(99, 102, 241, 0.2), rgba(56, 189, 248, 0.16));
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    header h1 {
+      font-size: 1.15rem;
+      letter-spacing: 0.02em;
+    }
+
+    header .tag {
+      padding: 4px 10px;
+      border-radius: 20px;
+      background: rgba(252, 211, 77, 0.12);
+      color: var(--accent);
+      font-size: 0.85rem;
+      border: 1px solid rgba(252, 211, 77, 0.3);
+    }
+
+    main {
+      display: grid;
+      grid-template-columns: 1fr 320px;
+      gap: 12px;
+      padding: 12px 12px 16px;
+    }
+
+    canvas {
+      width: 100%;
+      height: 620px;
+      background: #0a0f1c;
+      border-radius: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+
+    .panel {
+      display: grid;
+      gap: 10px;
+      height: 620px;
+    }
+
+    .card {
+      background: rgba(255, 255, 255, 0.03);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: 12px;
+      padding: 14px 16px;
+      box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    }
+
+    .card h2 {
+      margin-bottom: 6px;
+      font-size: 1rem;
+      letter-spacing: 0.01em;
+    }
+
+    .hud {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .stat {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      border-radius: 10px;
+      padding: 10px 12px;
+    }
+
+    .stat label {
+      display: block;
+      font-size: 0.85rem;
+      opacity: 0.8;
+      margin-bottom: 2px;
+    }
+
+    .stat strong {
+      font-size: 1.2rem;
+      letter-spacing: 0.02em;
+    }
+
+    .lap-list {
+      display: grid;
+      gap: 8px;
+      max-height: 180px;
+      overflow-y: auto;
+      padding-right: 6px;
+    }
+
+    .lap-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 10px;
+      background: rgba(255, 255, 255, 0.03);
+      border-radius: 8px;
+      border: 1px solid rgba(255, 255, 255, 0.06);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .lap-item.best {
+      border-color: rgba(252, 211, 77, 0.5);
+      box-shadow: 0 0 0 1px rgba(252, 211, 77, 0.25);
+    }
+
+    .keys {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      text-align: center;
+    }
+
+    .keys span {
+      padding: 8px 0;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      font-weight: 600;
+    }
+
+    .keys .wide {
+      grid-column: span 4;
+    }
+
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 10px;
+      border-radius: 20px;
+      background: rgba(99, 102, 241, 0.12);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      font-size: 0.9rem;
+      color: #c7d2fe;
+    }
+
+    @media (max-width: 1024px) {
+      main {
+        grid-template-columns: 1fr;
+      }
+
+      canvas,
+      .panel {
+        height: 440px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <h1>Кольцевые гонки 2D</h1>
+      <span class="tag">WASD · R — рестарт</span>
+    </header>
+    <main>
+      <canvas id="track" width="720" height="620"></canvas>
+      <div class="panel">
+        <div class="card">
+          <h2>Телеметрия</h2>
+          <div class="hud">
+            <div class="stat">
+              <label>Скорость</label>
+              <strong id="speed">0 км/ч</strong>
+            </div>
+            <div class="stat">
+              <label>Круги</label>
+              <strong id="laps">0</strong>
+            </div>
+            <div class="stat">
+              <label>Текущий круг</label>
+              <strong id="currentLap">0.00 c</strong>
+            </div>
+            <div class="stat">
+              <label>Лучший круг</label>
+              <strong id="bestLap">—</strong>
+            </div>
+          </div>
+        </div>
+      <div class="card">
+        <h2>Клавиши</h2>
+        <div class="keys" aria-label="раскладка WASD">
+          <span>W</span>
+          <span>A</span>
+          <span>S</span>
+          <span>D</span>
+          <span class="wide">R · рестарт</span>
+        </div>
+      </div>
+        <div class="card">
+          <h2>Круги</h2>
+          <div id="lapList" class="lap-list" aria-live="polite"></div>
+        </div>
+        <div class="card">
+          <h2>Подсказки</h2>
+          <div class="pill">Держитесь серединой между двумя серыми полосами</div>
+          <div class="pill">Если выезжаете за пределы трассы — машина начинает буксовать</div>
+        </div>
+      </div>
+    </main>
+  </div>
+  <script>
+    const canvas = document.getElementById("track");
+    const ctx = canvas.getContext("2d");
+
+    const ui = {
+      speed: document.getElementById("speed"),
+      laps: document.getElementById("laps"),
+      best: document.getElementById("bestLap"),
+      current: document.getElementById("currentLap"),
+      lapList: document.getElementById("lapList"),
+    };
+
+    const keys = new Set();
+    const state = {
+      center: { x: canvas.width / 2, y: canvas.height / 2 },
+      outerRadius: 280,
+      innerRadius: 155,
+      startZone: 0.28,
+      car: {
+        x: 0,
+        y: 0,
+        angle: -Math.PI / 2,
+        speed: 0,
+      },
+      lapStartTime: performance.now(),
+      lastAngle: 0,
+      laps: [],
+      offTrack: false,
+    };
+
+    function resetCar() {
+      state.car.x = state.center.x + (state.outerRadius - 40);
+      state.car.y = state.center.y;
+      state.car.angle = -Math.PI / 2;
+      state.car.speed = 0;
+      state.lapStartTime = performance.now();
+      state.lastAngle = Math.atan2(state.car.y - state.center.y, state.car.x - state.center.x);
+      state.offTrack = false;
+    }
+
+    function formatTime(ms) {
+      return (ms / 1000).toFixed(2) + " c";
+    }
+
+    function renderLaps() {
+      ui.lapList.innerHTML = "";
+      const best = state.laps.length ? Math.min(...state.laps) : null;
+      state.laps.forEach((lap, i) => {
+        const item = document.createElement("div");
+        item.className = "lap-item" + (lap === best ? " best" : "");
+        item.innerHTML = `<span>#${i + 1}</span><strong>${formatTime(lap)}</strong>`;
+        ui.lapList.appendChild(item);
+      });
+      ui.laps.textContent = state.laps.length;
+      ui.best.textContent = best ? formatTime(best) : "—";
+    }
+
+    function drawTrack() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Grass
+      ctx.fillStyle = "var(--grass)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Outer track ring
+      ctx.beginPath();
+      ctx.arc(state.center.x, state.center.y, state.outerRadius, 0, Math.PI * 2);
+      ctx.fillStyle = "var(--track)";
+      ctx.fill();
+
+      // Inner cut-out
+      ctx.globalCompositeOperation = "destination-out";
+      ctx.beginPath();
+      ctx.arc(state.center.x, state.center.y, state.innerRadius, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalCompositeOperation = "source-over";
+
+      // Inner dark ring
+      ctx.beginPath();
+      ctx.arc(state.center.x, state.center.y, state.innerRadius, 0, Math.PI * 2);
+      ctx.fillStyle = "var(--track-inner)";
+      ctx.fill();
+
+      // Start/finish line
+      ctx.save();
+      ctx.translate(state.center.x, state.center.y);
+      ctx.rotate(0);
+      ctx.fillStyle = "rgba(252, 211, 77, 0.9)";
+      ctx.fillRect(state.outerRadius - 12, -20, 22, 40);
+      ctx.restore();
+
+      // Direction markers
+      ctx.save();
+      ctx.translate(state.center.x, state.center.y);
+      ctx.strokeStyle = "rgba(255,255,255,0.25)";
+      ctx.lineWidth = 2;
+      ctx.setLineDash([10, 12]);
+      ctx.beginPath();
+      ctx.arc(0, 0, (state.outerRadius + state.innerRadius) / 2, -0.2, Math.PI * 2 - 0.2);
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    function drawCar() {
+      const { x, y, angle } = state.car;
+      const width = 38;
+      const height = 20;
+
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(angle);
+
+      ctx.fillStyle = state.offTrack ? "#f87171" : "#60a5fa";
+      ctx.strokeStyle = "rgba(255,255,255,0.9)";
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.roundRect(-width / 2, -height / 2, width, height, 6);
+      ctx.fill();
+      ctx.stroke();
+
+      // Nose
+      ctx.fillStyle = "var(--accent)";
+      ctx.beginPath();
+      ctx.roundRect(width / 2 - 10, -height / 4, 10, height / 2, 3);
+      ctx.fill();
+
+      ctx.restore();
+    }
+
+    function updateUI(delta) {
+      const kmh = Math.abs(state.car.speed) * 60 * 3.6;
+      ui.speed.textContent = `${kmh.toFixed(0)} км/ч`;
+      const currentLapTime = performance.now() - state.lapStartTime;
+      ui.current.textContent = formatTime(currentLapTime);
+    }
+
+    function handleLapDetection(angle, radius) {
+      const atStartLine = Math.abs(angle) < state.startZone && radius > (state.innerRadius + 20) && radius < (state.outerRadius - 10);
+      const passedLine = state.lastAngle < 0 && angle >= 0;
+      if (atStartLine && passedLine && !state.offTrack) {
+        const now = performance.now();
+        const lapTime = now - state.lapStartTime;
+        if (lapTime > 1500) { // ignore immediate restarts
+          state.laps.push(lapTime);
+          renderLaps();
+        }
+        state.lapStartTime = now;
+      }
+      state.lastAngle = angle;
+    }
+
+    function update(dt) {
+      const accel = 0.0018;
+      const maxSpeed = 0.45;
+      const drag = 0.993;
+
+      if (keys.has("w")) state.car.speed += accel * dt;
+      if (keys.has("s")) state.car.speed -= accel * dt * 0.8;
+
+      state.car.speed *= drag;
+      state.car.speed = Math.max(-maxSpeed, Math.min(maxSpeed, state.car.speed));
+
+      if (Math.abs(state.car.speed) > 0.001) {
+        const turnRate = 0.0024 * dt * Math.sign(state.car.speed);
+        if (keys.has("a")) state.car.angle -= turnRate;
+        if (keys.has("d")) state.car.angle += turnRate;
+      }
+
+      state.car.x += Math.cos(state.car.angle) * state.car.speed * dt * 60;
+      state.car.y += Math.sin(state.car.angle) * state.car.speed * dt * 60;
+
+      const dx = state.car.x - state.center.x;
+      const dy = state.car.y - state.center.y;
+      const radius = Math.hypot(dx, dy);
+      const angle = Math.atan2(dy, dx);
+
+      state.offTrack = radius > state.outerRadius || radius < state.innerRadius;
+      if (state.offTrack) {
+        state.car.speed *= 0.96;
+      }
+
+      handleLapDetection(angle, radius);
+      updateUI(dt);
+    }
+
+    function loop(time) {
+      if (!loop.last) loop.last = time;
+      const dt = time - loop.last;
+      loop.last = time;
+      update(dt);
+      drawTrack();
+      drawCar();
+      requestAnimationFrame(loop);
+    }
+
+    window.addEventListener("keydown", (e) => {
+      const key = e.key.toLowerCase();
+      if (["w", "a", "s", "d"].includes(key)) keys.add(key);
+      if (key === "r") resetCar();
+    });
+
+    window.addEventListener("keyup", (e) => {
+      const key = e.key.toLowerCase();
+      keys.delete(key);
+    });
+
+    resetCar();
+    renderLaps();
+    drawTrack();
+    drawCar();
+    requestAnimationFrame(loop);
+  </script>
+</body>
+</html>
