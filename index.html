@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <meta name="theme-color" content="#f0f2f5" />
+  <meta name="color-scheme" content="light dark" />
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com; img-src 'self' data:; font-src https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; script-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none';" />
+  <title>Голосовой калькулятор</title>
+  <link rel="icon" type="image/png" href="img/icon.png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
+    <script src="js/theme-init.js"></script>
+    <link rel="stylesheet" href="css/app.css" />
+</head>
+<body>
+  <div id="edge"></div>
+  <button id="btnMenu" class="hamb" aria-label="Меню">≡</button>
+
+  <aside id="drawer" class="drawer" aria-hidden="true">
+    <div class="drawer-title">Меню</div>
+    <button class="navbtn" data-view="calc">Калькулятор</button>
+    <button class="navbtn" data-view="settings">Настройки</button>
+    <button class="navbtn" data-view="about">О приложении</button>
+  </aside>
+  <div id="scrim" class="scrim"></div>
+
+  <main class="screen">
+    <div class="wrap">
+      <section id="view-calc" class="view active">
+        <div class="header">
+          <h1>Голосовой калькулятор</h1>
+          <p id="status"></p>
+        </div>
+        <div id="expr"></div>
+        <div id="full"></div>
+        <div class="center">
+          <button id="btnListen" class="btn circle"><span class="title" id="btnTitle">НАЖМИ</span></button>
+        </div>
+        <div class="spacer-12"></div>
+        <div class="history-block">
+          <h2 class="history-title">История вычислений</h2>
+          <ul id="historyList" class="history-list"></ul>
+          <button id="btnClearHistory" class="history-clear">Очистить</button>
+        </div>
+      </section>
+
+      <section id="view-settings" class="view">
+        <div class="header"><h1>Настройки</h1></div>
+        <div class="about-body">
+          <div class="field">
+            <span class="label">Тема</span>
+            <div id="themeToggle" class="theme-toggle" role="group" aria-label="Тема">
+              <button type="button" data-value="light">Светлая</button>
+              <button type="button" data-value="dark">Тёмная</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="view-about" class="view">
+        <div class="header"><h1>О приложении</h1></div>
+        <div class="about-body">
+          <article class="policy">
+            <h2>Политика конфиденциальности приложения «Голосовой калькулятор»</h2>
+            <p><b>Дата последнего обновления:</b> 5 октября 2025 г.</p>
+            <h3>1. Общие положения</h3>
+            <p>Мобильное приложение «Голосовой калькулятор» предназначено для голосовых вычислений. Используя Приложение, пользователь соглашается с условиями настоящей Политики.</p>
+            <h3>2. Сбор и использование данных</h3>
+            <ul>
+              <li>Приложение не собирает и не хранит персональные данные пользователей.</li>
+              <li>Голосовые команды обрабатываются локально на устройстве исключительно для выполнения вычислений и не передаются на сторонние серверы.</li>
+            </ul>
+            <h3>3. Разрешения и доступы</h3>
+            <p>Приложение запрашивает доступ к микрофону для распознавания голосовых команд.</p>
+            <h3>4. Передача третьим лицам</h3>
+            <p>Персональные данные не продаются и не передаются третьим лицам. В приложении нет аналитики и рекламы.</p>
+            <h3>5. Хранение и защита данных</h3>
+            <p>История вычислений хранится локально и может быть удалена пользователем. Серверной части нет.</p>
+            <h3>6. Права пользователя</h3>
+            <ul>
+              <li>отключить доступ к микрофону в системных настройках;</li>
+              <li>очистить историю вычислений;</li>
+              <li>удалить Приложение.</li>
+            </ul>
+            <h3>7. Дети</h3>
+            <p>Приложение предназначено для широкой аудитории и не собирает данные детей.</p>
+            <h3>8. Изменения политики</h3>
+            <p>Дата последней редакции указывается в актуальной версии.</p>
+            <h3>9. Контакты</h3>
+            <p>Почта разработчика: <b>gameloft235@gmail.com</b>.</p>
+          </article>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script src="cordova.js"></script>
+  <script src="js/safe-calc.js"></script>
+    <script src="js/app.js"></script>
+</body>
+</html>
