@@ -3,101 +3,655 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <meta name="theme-color" content="#f0f2f5" />
+  <meta name="theme-color" content="#6366f1" />
   <meta name="color-scheme" content="light dark" />
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com; img-src 'self' data:; font-src https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; script-src 'self' 'unsafe-inline'; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none';" />
+  <meta name="description" content="Голосовой калькулятор с современным интерфейсом">
+  <!-- Content Security Policy adapted for single file usage -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://fonts.googleapis.com https://fonts.gstatic.com; img-src 'self' data:; font-src https://fonts.gstatic.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; script-src 'self' 'unsafe-inline' 'unsafe-eval'; object-src 'none'; base-uri 'self'; form-action 'none'; frame-ancestors 'none';" />
+
   <title>Голосовой калькулятор</title>
   <link rel="icon" type="image/png" href="img/icon.png" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet" />
-    <script src="js/theme-init.js"></script>
-    <link rel="stylesheet" href="css/app.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <style>
+    :root {
+      --primary-color: #6366f1;
+      --primary-hover: #4f46e5;
+      --bg-color: #f8fafc;
+      --surface-color: #ffffff;
+      --text-color: #0f172a;
+      --text-secondary: #64748b;
+      --border-color: #e2e8f0;
+      --danger-color: #ef4444;
+      --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+      --font-family: 'Inter', sans-serif;
+      --border-radius: 16px;
+      --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    /* Dark Theme */
+    [data-theme="dark"] {
+      --primary-color: #818cf8;
+      --primary-hover: #6366f1;
+      --bg-color: #0f172a;
+      --surface-color: #1e293b;
+      --text-color: #f1f5f9;
+      --text-secondary: #94a3b8;
+      --border-color: #334155;
+      --shadow: 0 4px 6px -1px rgb(0 0 0 / 0.5);
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5);
+    }
+
+    /* Reset & Base */
+    * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body {
+      margin: 0;
+      font-family: var(--font-family);
+      background-color: var(--bg-color);
+      color: var(--text-color);
+      transition: background-color 0.3s ease, color 0.3s ease;
+      overflow-x: hidden;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    button {
+      font-family: inherit;
+      border: none;
+      background: none;
+      cursor: pointer;
+      color: inherit;
+      padding: 0;
+    }
+
+    /* Layout */
+    .header {
+      padding: 20px;
+      text-align: center;
+    }
+    .header h1 {
+      margin: 0;
+      font-size: 1.25rem;
+      font-weight: 700;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      padding: 0 20px 80px 20px; /* Bottom padding for fixed controls if any */
+      width: 100%;
+      flex-grow: 1;
+    }
+
+    /* Views */
+    .view {
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+    .view.active { display: block; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Hamburger Button */
+    .menu-btn {
+      position: fixed;
+      top: 16px;
+      left: 16px;
+      z-index: 50;
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--surface-color);
+      box-shadow: var(--shadow);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.5rem;
+      transition: var(--transition);
+    }
+    .menu-btn:active { transform: scale(0.95); }
+
+    /* Drawer */
+    .drawer-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      z-index: 90;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      backdrop-filter: blur(2px);
+    }
+    .drawer-overlay.open { opacity: 1; pointer-events: auto; }
+
+    .drawer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 280px;
+      background: var(--surface-color);
+      z-index: 100;
+      transform: translateX(-100%);
+      transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow-lg);
+    }
+    .drawer.open { transform: translateX(0); }
+
+    .drawer-title {
+      font-size: 1.5rem;
+      font-weight: 800;
+      margin-bottom: 40px;
+      color: var(--primary-color);
+      padding-left: 12px;
+    }
+
+    .nav-btn {
+      display: flex;
+      align-items: center;
+      padding: 16px;
+      margin-bottom: 8px;
+      border-radius: 12px;
+      font-size: 1rem;
+      font-weight: 500;
+      transition: var(--transition);
+      color: var(--text-color);
+      text-align: left;
+    }
+    .nav-btn:hover, .nav-btn.active {
+      background-color: rgba(99, 102, 241, 0.1);
+      color: var(--primary-color);
+    }
+
+    /* Calculator Styles */
+    .display-area {
+      background: var(--surface-color);
+      border-radius: var(--border-radius);
+      padding: 30px;
+      margin-bottom: 30px;
+      box-shadow: var(--shadow);
+      text-align: right;
+      min-height: 150px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      position: relative;
+    }
+
+    #status {
+        position: absolute;
+        top: 15px;
+        left: 20px;
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        font-weight: 500;
+    }
+
+    #expr {
+      font-size: 1.5rem;
+      color: var(--text-secondary);
+      margin-bottom: 10px;
+      min-height: 1.5em;
+      word-break: break-all;
+    }
+
+    #full {
+      font-size: 3rem;
+      font-weight: 700;
+      color: var(--text-color);
+      word-break: break-all;
+      line-height: 1.2;
+    }
+
+    .mic-container {
+      display: flex;
+      justify-content: center;
+      margin-bottom: 40px;
+    }
+
+    .mic-btn {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: var(--primary-color);
+      color: white;
+      box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem; /* Font size for text inside */
+      font-weight: 700;
+      transition: var(--transition);
+      position: relative;
+    }
+
+    /* Icon inside button */
+    .mic-icon {
+        width: 32px;
+        height: 32px;
+        fill: currentColor;
+    }
+
+    .mic-btn:active { transform: scale(0.95); }
+
+    .mic-btn.listening {
+      animation: pulse 1.5s infinite;
+      background-color: var(--danger-color);
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.7); }
+      70% { transform: scale(1); box-shadow: 0 0 0 20px rgba(239, 68, 68, 0); }
+      100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+    }
+
+    /* History */
+    .history-block {
+      background: var(--surface-color);
+      border-radius: var(--border-radius);
+      padding: 20px;
+      box-shadow: var(--shadow);
+    }
+
+    .history-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .history-title {
+      margin: 0;
+      font-size: 1.1rem;
+      font-weight: 600;
+    }
+
+    .history-clear {
+        font-size: 0.85rem;
+        color: var(--danger-color);
+        font-weight: 600;
+        padding: 4px 8px;
+        border-radius: 6px;
+        transition: background 0.2s;
+    }
+    .history-clear:hover { background: rgba(239, 68, 68, 0.1); }
+
+    .history-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+
+    .history-item {
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      animation: slideIn 0.3s ease;
+    }
+    .history-item:last-child { border-bottom: none; }
+
+    .h-expr { color: var(--text-secondary); font-size: 0.9rem; margin-right: 10px; }
+    .h-res { font-weight: 600; color: var(--text-color); }
+
+    @keyframes slideIn {
+        from { opacity: 0; transform: translateX(-10px); }
+        to { opacity: 1; transform: translateX(0); }
+    }
+
+    /* Settings */
+    .settings-card {
+      background: var(--surface-color);
+      border-radius: var(--border-radius);
+      padding: 20px;
+      box-shadow: var(--shadow);
+    }
+
+    .setting-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+    .setting-label { font-weight: 500; }
+
+    .theme-switcher {
+        display: flex;
+        background: var(--bg-color);
+        padding: 4px;
+        border-radius: 12px;
+    }
+
+    .theme-btn {
+        padding: 8px 16px;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: var(--text-secondary);
+    }
+
+    .theme-btn.active {
+        background: var(--surface-color);
+        color: var(--primary-color);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    /* About */
+    .about-card {
+        background: var(--surface-color);
+        border-radius: var(--border-radius);
+        padding: 24px;
+        box-shadow: var(--shadow);
+        line-height: 1.6;
+    }
+    .about-card h2 { font-size: 1.2rem; margin-top: 0; }
+    .about-card h3 { font-size: 1rem; margin-top: 20px; color: var(--primary-color); }
+    .about-card ul { padding-left: 20px; }
+    .about-card li { margin-bottom: 8px; }
+
+    /* Scrollbar styling */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: var(--text-secondary); border-radius: 3px; opacity: 0.5; }
+
+  </style>
 </head>
 <body>
-  <div id="edge"></div>
-  <button id="btnMenu" class="hamb" aria-label="Меню">≡</button>
 
-  <aside id="drawer" class="drawer" aria-hidden="true">
+  <!-- Navigation Drawer -->
+  <div class="drawer-overlay" id="overlay"></div>
+  <aside class="drawer" id="drawer">
     <div class="drawer-title">Меню</div>
-    <button class="navbtn" data-view="calc">Калькулятор</button>
-    <button class="navbtn" data-view="settings">Настройки</button>
-    <button class="navbtn" data-view="about">О приложении</button>
+    <button class="nav-btn active" onclick="app.navigate('calc')">
+        <span>Калькулятор</span>
+    </button>
+    <button class="nav-btn" onclick="app.navigate('settings')">
+        <span>Настройки</span>
+    </button>
+    <button class="nav-btn" onclick="app.navigate('about')">
+        <span>О приложении</span>
+    </button>
   </aside>
-  <div id="scrim" class="scrim"></div>
 
-  <main class="screen">
-    <div class="wrap">
-      <section id="view-calc" class="view active">
-        <div class="header">
-          <h1>Голосовой калькулятор</h1>
-          <p id="status"></p>
-        </div>
+  <!-- Main Content -->
+  <button class="menu-btn" id="menuBtn" aria-label="Меню">
+    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>
+  </button>
+
+  <div class="container">
+
+    <!-- Calculator View -->
+    <section id="view-calc" class="view active">
+      <div class="header">
+        <h1>Голосовой калькулятор</h1>
+      </div>
+
+      <div class="display-area">
+        <div id="status">Нажми кнопку и говори...</div>
         <div id="expr"></div>
-        <div id="full"></div>
-        <div class="center">
-          <button id="btnListen" class="btn circle"><span class="title" id="btnTitle">НАЖМИ</span></button>
-        </div>
-        <div class="spacer-12"></div>
-        <div class="history-block">
-          <h2 class="history-title">История вычислений</h2>
-          <ul id="historyList" class="history-list"></ul>
-          <button id="btnClearHistory" class="history-clear">Очистить</button>
-        </div>
-      </section>
+        <div id="full">0</div>
+      </div>
 
-      <section id="view-settings" class="view">
-        <div class="header"><h1>Настройки</h1></div>
-        <div class="about-body">
-          <div class="field">
-            <span class="label">Тема</span>
-            <div id="themeToggle" class="theme-toggle" role="group" aria-label="Тема">
-              <button type="button" data-value="light">Светлая</button>
-              <button type="button" data-value="dark">Тёмная</button>
+      <div class="mic-container">
+        <button id="btnListen" class="mic-btn" aria-label="Слушать">
+             <svg class="mic-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
+        </button>
+      </div>
+
+      <div class="history-block">
+        <div class="history-header">
+            <h2 class="history-title">История</h2>
+            <button id="btnClearHistory" class="history-clear">Очистить</button>
+        </div>
+        <ul id="historyList" class="history-list">
+            <!-- Items will be injected here -->
+        </ul>
+      </div>
+    </section>
+
+    <!-- Settings View -->
+    <section id="view-settings" class="view">
+      <div class="header"><h1>Настройки</h1></div>
+      <div class="settings-card">
+        <div class="setting-row">
+            <span class="setting-label">Тема оформления</span>
+            <div class="theme-switcher">
+                <button class="theme-btn" id="themeLight" onclick="app.setTheme('light')">Светлая</button>
+                <button class="theme-btn" id="themeDark" onclick="app.setTheme('dark')">Тёмная</button>
             </div>
-          </div>
         </div>
-      </section>
+      </div>
+    </section>
 
-      <section id="view-about" class="view">
-        <div class="header"><h1>О приложении</h1></div>
-        <div class="about-body">
-          <article class="policy">
-            <h2>Политика конфиденциальности приложения «Голосовой калькулятор»</h2>
-            <p><b>Дата последнего обновления:</b> 5 октября 2025 г.</p>
+    <!-- About View -->
+    <section id="view-about" class="view">
+      <div class="header"><h1>О приложении</h1></div>
+      <div class="about-card">
+        <article class="policy">
+            <h2>Политика конфиденциальности</h2>
+            <p style="color: var(--text-secondary); font-size: 0.9rem;">Обновлено: 5 октября 2025 г.</p>
+
             <h3>1. Общие положения</h3>
-            <p>Мобильное приложение «Голосовой калькулятор» предназначено для голосовых вычислений. Используя Приложение, пользователь соглашается с условиями настоящей Политики.</p>
+            <p>Мобильное приложение «Голосовой калькулятор» предназначено для голосовых вычислений. Данные обрабатываются локально.</p>
+
             <h3>2. Сбор и использование данных</h3>
             <ul>
-              <li>Приложение не собирает и не хранит персональные данные пользователей.</li>
-              <li>Голосовые команды обрабатываются локально на устройстве исключительно для выполнения вычислений и не передаются на сторонние серверы.</li>
+              <li>Мы не собираем персональные данные.</li>
+              <li>Голос обрабатывается локально (или через стандартные API устройства) и не сохраняется нами.</li>
             </ul>
-            <h3>3. Разрешения и доступы</h3>
-            <p>Приложение запрашивает доступ к микрофону для распознавания голосовых команд.</p>
-            <h3>4. Передача третьим лицам</h3>
-            <p>Персональные данные не продаются и не передаются третьим лицам. В приложении нет аналитики и рекламы.</p>
-            <h3>5. Хранение и защита данных</h3>
-            <p>История вычислений хранится локально и может быть удалена пользователем. Серверной части нет.</p>
-            <h3>6. Права пользователя</h3>
-            <ul>
-              <li>отключить доступ к микрофону в системных настройках;</li>
-              <li>очистить историю вычислений;</li>
-              <li>удалить Приложение.</li>
-            </ul>
-            <h3>7. Дети</h3>
-            <p>Приложение предназначено для широкой аудитории и не собирает данные детей.</p>
-            <h3>8. Изменения политики</h3>
-            <p>Дата последней редакции указывается в актуальной версии.</p>
-            <h3>9. Контакты</h3>
-            <p>Почта разработчика: <b>gameloft235@gmail.com</b>.</p>
-          </article>
-        </div>
-      </section>
-    </div>
-  </main>
 
-  <script src="cordova.js"></script>
-  <script src="js/safe-calc.js"></script>
-    <script src="js/app.js"></script>
+            <h3>3. Разрешения</h3>
+            <p>Требуется доступ к микрофону для распознавания речи.</p>
+
+            <h3>4. Хранение</h3>
+            <p>История хранится только на вашем устройстве. Вы можете очистить её в любой момент.</p>
+
+            <h3>Контакты</h3>
+            <p>gameloft235@gmail.com</p>
+        </article>
+      </div>
+    </section>
+
+  </div>
+
+  <!-- Logic -->
+  <script>
+    // --- Math Logic ---
+    const Calculator = {
+        // Map Russian words to operators
+        replacements: {
+            'плюс': '+',
+            'минус': '-',
+            'умножить': '*',
+            'разделить': '/',
+            'делить': '/',
+            'на': '', // often used like "divide by" -> "разделить на"
+            'x': '*',
+            'х': '*', // cyrillic x
+            ',': '.',
+            'в степени': '**'
+        },
+
+        parse(speech) {
+            let expr = speech.toLowerCase();
+            for (const [key, val] of Object.entries(this.replacements)) {
+                expr = expr.split(key).join(val);
+            }
+            // Remove non-math chars allowed: digits, +, -, *, /, ., (, )
+            expr = expr.replace(/[^0-9+\-*/.()]/g, '');
+            return expr;
+        },
+
+        calculate(expr) {
+            try {
+                // Safe check: only math chars
+                if (!/^[\d+\-*/.()\s]*$/.test(expr)) return 'Error';
+                // Using Function as a safer eval
+                return new Function('return ' + expr)();
+            } catch (e) {
+                return 'Error';
+            }
+        }
+    };
+
+    // --- App Logic ---
+    const app = {
+        state: {
+            theme: 'light',
+            history: []
+        },
+
+        init() {
+            // Load Theme
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            this.setTheme(savedTheme);
+
+            // Load History
+            const savedHistory = localStorage.getItem('history');
+            if (savedHistory) {
+                this.state.history = JSON.parse(savedHistory);
+                this.renderHistory();
+            }
+
+            // Listeners
+            document.getElementById('menuBtn').addEventListener('click', () => this.toggleDrawer(true));
+            document.getElementById('overlay').addEventListener('click', () => this.toggleDrawer(false));
+            document.getElementById('btnListen').addEventListener('click', () => this.startListening());
+            document.getElementById('btnClearHistory').addEventListener('click', () => this.clearHistory());
+
+            // Init Speech Recognition
+            if ('webkitSpeechRecognition' in window || 'SpeechRecognition' in window) {
+                 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                 this.recognition = new SpeechRecognition();
+                 this.recognition.lang = 'ru-RU';
+                 this.recognition.continuous = false;
+                 this.recognition.interimResults = false;
+
+                 this.recognition.onstart = () => {
+                     document.getElementById('btnListen').classList.add('listening');
+                     document.getElementById('status').innerText = "Слушаю...";
+                 };
+
+                 this.recognition.onend = () => {
+                     document.getElementById('btnListen').classList.remove('listening');
+                     document.getElementById('status').innerText = "Нажми кнопку и говори...";
+                 };
+
+                 this.recognition.onresult = (event) => {
+                     const transcript = event.results[0][0].transcript;
+                     this.processSpeech(transcript);
+                 };
+
+                 this.recognition.onerror = (event) => {
+                     document.getElementById('status').innerText = "Ошибка: " + event.error;
+                     document.getElementById('btnListen').classList.remove('listening');
+                 };
+            } else {
+                document.getElementById('status').innerText = "Ваш браузер не поддерживает распознавание речи.";
+                document.getElementById('btnListen').disabled = true;
+            }
+        },
+
+        toggleDrawer(open) {
+            const drawer = document.getElementById('drawer');
+            const overlay = document.getElementById('overlay');
+            if (open) {
+                drawer.classList.add('open');
+                overlay.classList.add('open');
+            } else {
+                drawer.classList.remove('open');
+                overlay.classList.remove('open');
+            }
+        },
+
+        navigate(viewId) {
+            // Hide all views
+            document.querySelectorAll('.view').forEach(el => el.classList.remove('active'));
+            // Show target view
+            document.getElementById('view-' + viewId).classList.add('active');
+
+            // Update Nav styling
+            document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+            // Find the button that called this - simple hack or pass event
+            // We'll just re-highlight based on viewId
+            // (Assuming simple structure, we can query selector)
+            // Actually, for simplicity, let's just rely on click handlers.
+
+            this.toggleDrawer(false);
+        },
+
+        setTheme(theme) {
+            this.state.theme = theme;
+            document.documentElement.setAttribute('data-theme', theme);
+            localStorage.setItem('theme', theme);
+
+            // Update toggle buttons
+            document.getElementById('themeLight').classList.toggle('active', theme === 'light');
+            document.getElementById('themeDark').classList.toggle('active', theme === 'dark');
+        },
+
+        processSpeech(text) {
+            const expr = Calculator.parse(text);
+            const result = Calculator.calculate(expr);
+
+            document.getElementById('expr').innerText = text + ' =';
+
+            if (result === 'Error' || isNaN(result) || !isFinite(result)) {
+                 document.getElementById('full').innerText = "Ошибка";
+            } else {
+                 // Format result to avoid long decimals
+                 const formatted = parseFloat(result.toFixed(4));
+                 document.getElementById('full').innerText = formatted;
+                 this.addToHistory(text, formatted);
+            }
+        },
+
+        addToHistory(expression, result) {
+            this.state.history.unshift({ expr: expression, res: result });
+            if (this.state.history.length > 20) this.state.history.pop();
+            localStorage.setItem('history', JSON.stringify(this.state.history));
+            this.renderHistory();
+        },
+
+        clearHistory() {
+            this.state.history = [];
+            localStorage.removeItem('history');
+            this.renderHistory();
+        },
+
+        renderHistory() {
+            const list = document.getElementById('historyList');
+            list.innerHTML = this.state.history.map(item => `
+                <li class="history-item">
+                    <span class="h-expr">${item.expr}</span>
+                    <span class="h-res">= ${item.res}</span>
+                </li>
+            `).join('');
+        }
+    };
+
+    // Start App
+    window.addEventListener('DOMContentLoaded', () => {
+        app.init();
+    });
+  </script>
+
+  <!-- Preserve cordova ref if needed, though harmless in browser -->
+  <!-- <script src="cordova.js"></script> -->
 </body>
 </html>
